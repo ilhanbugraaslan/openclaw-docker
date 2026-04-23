@@ -21,17 +21,15 @@ WORKDIR /openclaw
 ARG OPENCLAW_GIT_REF=main
 RUN git clone --depth 1 --branch "${OPENCLAW_GIT_REF}" https://github.com/openclaw/openclaw.git .
 
-# The checked-out release tag is a self-contained pnpm workspace with its
-# own pnpm-lock.yaml. Install strictly from that lockfile so transitive
-# deps match exactly what the tagged runtime-postbuild script expects —
-# --no-frozen-lockfile drifts newer versions over time and breaks
-# stage-bundled-plugin-runtime-deps.mjs once upstream publishes a patch
-# release of any bundled plugin dep (e.g. @aws/bedrock-token-generator
-# 1.1.0 → 1.1.x).
+# Append to the workspace .npmrc — do NOT overwrite it. Upstream's .npmrc
+# pins `node-linker=hoisted`, without which transitive deps never land in
+# the root node_modules/ and stage-bundled-plugin-runtime-deps.mjs fails
+# with "runtime dependency <x> must resolve to an exact installed version".
 #
-# minimum-release-age=0 disables pnpm's 48h supply-chain delay so we don't
-# fail on deps the release itself pinned to < 48h-old versions.
-RUN echo 'minimum-release-age=0' > .npmrc
+# minimum-release-age=0 disables pnpm's 48h supply-chain delay so builds
+# don't fail on deps the release itself pinned to < 48h-old versions
+# (e.g. tokenjuice 0.6.1 cut hours before v2026.4.21).
+RUN echo 'minimum-release-age=0' >> .npmrc
 RUN pnpm install --frozen-lockfile
 RUN pnpm build
 ENV OPENCLAW_PREFER_PNPM=1
