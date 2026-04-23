@@ -1,6 +1,6 @@
 services:
   openclaw:
-    image: coollabsio/openclaw:latest
+    image: ghcr.io/ilhanbugraaslan/openclaw:latest
     ports:
       - "${PORT:-8080}:${PORT:-8080}"
     environment:
