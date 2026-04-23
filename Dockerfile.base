@@ -21,14 +21,16 @@ WORKDIR /openclaw
 ARG OPENCLAW_GIT_REF=main
 RUN git clone --depth 1 --branch "${OPENCLAW_GIT_REF}" https://github.com/openclaw/openclaw.git .
 
-# Patch: relax version requirements for packages using workspace protocol.
-RUN set -eux; \
-  find ./extensions -name 'package.json' -type f | while read -r f; do \
-    sed -i -E 's/"openclaw"[[:space:]]*:[[:space:]]*">=[^"]+"/"openclaw": "*"/g' "$f"; \
-    sed -i -E 's/"openclaw"[[:space:]]*:[[:space:]]*"workspace:[^"]+"/"openclaw": "*"/g' "$f"; \
-  done
-
-RUN pnpm install --no-frozen-lockfile
+# Append to the workspace .npmrc — do NOT overwrite it. Upstream's .npmrc
+# pins `node-linker=hoisted`, without which transitive deps never land in
+# the root node_modules/ and stage-bundled-plugin-runtime-deps.mjs fails
+# with "runtime dependency <x> must resolve to an exact installed version".
+#
+# minimum-release-age=0 disables pnpm's 48h supply-chain delay so builds
+# don't fail on deps the release itself pinned to < 48h-old versions
+# (e.g. tokenjuice 0.6.1 cut hours before v2026.4.21).
+RUN echo 'minimum-release-age=0' >> .npmrc
+RUN pnpm install --frozen-lockfile
 RUN pnpm build
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:install && pnpm ui:build
