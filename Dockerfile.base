@@ -21,17 +21,18 @@ WORKDIR /openclaw
 ARG OPENCLAW_GIT_REF=main
 RUN git clone --depth 1 --branch "${OPENCLAW_GIT_REF}" https://github.com/openclaw/openclaw.git .
 
-# Patch: relax version requirements for packages using workspace protocol.
-RUN set -eux; \
-  find ./extensions -name 'package.json' -type f | while read -r f; do \
-    sed -i -E 's/"openclaw"[[:space:]]*:[[:space:]]*">=[^"]+"/"openclaw": "*"/g' "$f"; \
-    sed -i -E 's/"openclaw"[[:space:]]*:[[:space:]]*"workspace:[^"]+"/"openclaw": "*"/g' "$f"; \
-  done
-
-# Disable pnpm's minimumReleaseAge supply-chain check so freshly-published
-# transitive deps (e.g. tokenjuice cut < 48h ago) don't block the build.
+# The checked-out release tag is a self-contained pnpm workspace with its
+# own pnpm-lock.yaml. Install strictly from that lockfile so transitive
+# deps match exactly what the tagged runtime-postbuild script expects —
+# --no-frozen-lockfile drifts newer versions over time and breaks
+# stage-bundled-plugin-runtime-deps.mjs once upstream publishes a patch
+# release of any bundled plugin dep (e.g. @aws/bedrock-token-generator
+# 1.1.0 → 1.1.x).
+#
+# minimum-release-age=0 disables pnpm's 48h supply-chain delay so we don't
+# fail on deps the release itself pinned to < 48h-old versions.
 RUN echo 'minimum-release-age=0' > .npmrc
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 RUN pnpm build
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:install && pnpm ui:build
