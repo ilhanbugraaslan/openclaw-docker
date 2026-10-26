@@ -436,3 +436,18 @@ Arrays are replaced, not concatenated. Provider API keys are always read from en
 - Openclaw uses CalVer: `v2026.1.29` (roughly daily releases). Detected via GitHub Releases API.
 - Using native `ubuntu-24.04-arm` runners for arm64 builds (same pattern as coollabsio/pocketbase).
 - Config is environment-driven: set env vars → restart container → config updates automatically.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
+## Who maintains this
+
+Maintained by [wedevit](https://wedevit.net), an independent IT team that
+builds and runs server infrastructure: container hosting, reverse proxies,
+backup and hardening, on bare metal, Proxmox or cloud.
+
+If you are deploying this for a company rather than yourself, the
+[server setup](https://wedevit.net/en/services/server) and
+[remote monitoring](https://wedevit.net/en/services/sysadmin) pages describe
+how that work is scoped.
